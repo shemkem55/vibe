@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinema Sanctuary | Studio Evolved</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@300;500;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: rgba(255, 255, 255, 0.03);
+            --accent: #6ee7b7;
+            --secondary-accent: #60a5fa;
+            --text: #e0e0e0;
+            --muted: #888;
+            --border: rgba(255, 255, 255, 0.1);
+            --pane-bg: rgba(10, 10, 10, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            background: linear-gradient(135deg, #050508 0%, #0a0a1f 100%);
+        }
+
+        /* Particles Background */
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Layout Architecture */
+        .workspace {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-columns: 300px 1fr 400px;
+            width: 100%;
+            height: 100vh;
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .pane {
+            background: var(--pane-bg);
+            -webkit-backdrop-filter: blur(30px);
+            backdrop-filter: blur(30px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .pane-header {
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pane-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        /* Left Pane: Thinking */
+        #thinking-flow {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .thought-card {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            animation: slideInLeft 0.5s ease-out;
+        }
+
+        .thought-label {
+            font-size: 0.6rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .dna-strip {
+            display: flex;
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .dna-bit {
+            height: 4px;
+            flex: 1;
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        .dna-bit.active {
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        /* Center Pane: Conversation */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: radial-gradient(circle at top, rgba(187, 134, 252, 0.05) 0%, transparent 70%);
+        }
+
+        #chat-flow {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 16px 20px;
+            border-radius: 20px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            animation: fadeInUp 0.4s ease-out;
+            white-space: pre-wrap;
+            /* 🟢 FIX: Preserve newlines from Thinking Process */
+            word-wrap: break-word;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message h1,
+        .message h2,
+        .message h3 {
+            color: var(--accent);
+            margin: 15px 0 10px 0;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+        }
+
+        .message ul,
+        .message ol {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        .user-msg {
+            align-self: flex-end;
+            background: rgba(110, 231, 183, 0.08);
+            border: 1px solid rgba(110, 231, 183, 0.15);
+            border-bottom-right-radius: 4px;
+        }
+
+        .agent-msg {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .vibe-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            margin-top: 8px;
+            background: var(--accent);
+            color: black;
+        }
+
+        .indicator-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #vibe-indicator {
+            font-size: 0.6rem;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
+
+        .visualizer-container {
+            height: 60px;
+            width: 100%;
+            border-top: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #visualizer {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: blur(2px) brightness(1.5);
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            margin-left: 2px;
+            color: var(--accent);
+            animation: cursorBlink 0.9s infinite;
+            font-weight: normal;
+        }
+
+        @keyframes cursorBlink {
+
+            0%,
+            49% {
+                opacity: 1;
+            }
+
+            50%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .input-area {
+            padding: 30px;
+            border-top: 1px solid var(--border);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .mic-btn {
+            position: absolute;
+            right: 15px;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .mic-btn:hover {
+            color: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .mic-btn.listening {
+            color: #ff4444;
+            animation: pulse-red 1.5s infinite;
+        }
+
+        .upload-btn {
+            position: absolute;
+            right: 50px;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .upload-btn:hover {
+            color: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .render-loading {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+        }
+
+        .render-title {
+            font-size: 0.6rem;
+            color: var(--accent);
+            letter-spacing: 2px;
+        }
+
+        .render-status-text {
+            font-size: 0.5rem;
+            color: var(--muted);
+            margin-top: 10px;
+        }
+
+        .render-bar-container {
+            width: 80%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .render-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+            }
+        }
+
+        input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            padding: 18px 24px;
+            border-radius: 16px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 30px rgba(187, 134, 252, 0.05);
+        }
+
+        /* Right Pane: Code Sanctuary */
+        .editor-mockup {
+            flex: 1;
+            padding: 20px;
+            background: #1e1e1e;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #d4d4d4;
+            position: relative;
+        }
+
+        .editor-line {
+            display: flex;
+            gap: 15px;
+        }
+
+        .line-num {
+            color: #3b3b4f;
+            text-align: right;
+            width: 25px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .comment {
+            color: #5c6370;
+            font-style: italic;
+        }
+
+        .keyword {
+            color: #c678dd;
+        }
+
+        .string {
+            color: #98c379;
+        }
+
+        .function {
+            color: #61afef;
+        }
+
+        .render-loading {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+        }
+
+        .render-title {
+            font-size: 0.6rem;
+            color: var(--accent);
+            letter-spacing: 2px;
+        }
+
+        .render-status-text {
+            font-size: 0.5rem;
+            color: var(--muted);
+            margin-top: 10px;
+        }
+
+        .diag-text {
+            font-size: 0.7rem;
+        }
+
+        .telemetry-overlay {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.5rem;
+            text-align: right;
+            color: #666;
+            pointer-events: none;
+        }
+
+        .meta-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            text-align: right;
+            pointer-events: none;
+        }
+
+        .meta-accent {
+            color: var(--accent);
+        }
+
+        .meta-sub {
+            font-size: 0.5rem;
+            margin-top: 5px;
+        }
+
+        .meta-line {
+            font-size: 0.5rem;
+        }
+
+        .output-video-style {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .visualizer-full {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #444;
+            text-transform: uppercase;
+        }
+
+        .monitor-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 0.6rem;
+            color: #ff4444;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .monitor-frame {
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1) 1px, transparent 1px, transparent 2px);
+            pointer-events: none;
+        }
+
+        .shot-list {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .shot-item {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .shot-type {
+            color: var(--secondary-accent);
+            font-weight: 600;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .dream-fragment {
+            color: #6ee7b7;
+            font-style: italic;
+            border-left: 2px solid #6ee7b7;
+            padding-left: 10px;
+            margin-top: 5px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        .production-visual-cell {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #444;
+            text-transform: uppercase;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .dna-card {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 10px;
+        }
+
+        .dna-label {
+            font-size: 0.6rem;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="particles-js"></div>
+
+    <div class="workspace">
+        <!-- THINKING PANE -->
+        <div class="pane">
+            <div class="pane-header">
+                <h2>Creative Engine</h2>
+            </div>
+            <div id="thinking-flow">
+                <div class="thought-card">
+                    <div class="thought-label">Studio Init</div>
+                    Calibrating lens... sequence initialized.
+                </div>
+            </div>
+        </div>
+
+        <!-- CONVERSATION PANE -->
+        <div class="pane chat-container">
+            <div class="pane-header">
+                <h2>Screenplay Flow</h2>
+                <div class="indicator-container">
+                    <div id="vibe-indicator">IDLE</div>
+                </div>
+            </div>
+            <div id="chat-flow">
+                <div class="message agent-msg">
+                    action. roll camera. what story are we telling today?
+                </div>
+            </div>
+
+            <!-- Full Width Visualizer Section -->
+            <div class="visualizer-container">
+                <canvas id="visualizer"></canvas>
+            </div>
+
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <input type="text" id="user-input" placeholder="Enter your plot premise..." autocomplete="off">
+                    <input type="file" id="plot-upload" style="display: none;" accept=".txt,.pdf,.docx">
+                    <button id="upload-btn" class="upload-btn" title="Upload Plot File">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </button>
+                    <button id="mic-btn" class="mic-btn" title="Toggle Voice Input">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREENING ROOM PANE -->
+        <div class="pane">
+            <div class="pane-header">
+                <h2>Screening Room</h2>
+            </div>
+            <div class="editor-mockup">
+                <div class="monitor-div">
+                    <div class="monitor-overlay">REC ● LIVE</div>
+                    <div class="monitor-frame"></div>
+                    <div class="render-loading" id="render-overlay">
+                        <div class="render-title">PRODUCTION RENDER IN PROGRESS</div>
+                        <div class="render-bar-container">
+                            <div class="render-bar" id="render-progress"></div>
+                        </div>
+                        <div id="render-status" class="render-status-text">Initializing Neural Engines...</div>
+                    </div>
+                    <div id="production-visual" class="production-visual-cell">
+                        <video id="output-video" class="output-video-style" controls loop muted>
+                            <source src="" type="video/mp4">
+                        </video>
+                        <div id="visual-placeholder" class="visualizer-full">Waiting for Plot Input...</div>
+                    </div>
+                </div>
+                <div id="shot-feed" class="shot-list">
+                    <div class="shot-item">
+                        <span class="shot-type">CAM 01</span>
+                        <span>Optical Flow Initialized</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        particlesJS('particles-js', {
+            "particles": {
+                "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#6ee7b7" },
+                "shape": { "type": "circle" },
+                "opacity": { "value": 0.1 },
+                "size": { "value": 1 },
+                "line_linked": { "enable": true, "distance": 150, "color": "#6ee7b7", "opacity": 0.05, "width": 1 },
+                "move": { "enable": true, "speed": 0.8 }
+            },
+            "interactivity": {
+                "events": { "onhover": { "enable": true, "mode": "grab" } }
+            },
+            "retina_detect": true
+        });
+
+        const chatFlow = document.getElementById('chat-flow');
+        const thinkingFlow = document.getElementById('thinking-flow');
+        const userInput = document.getElementById('user-input');
+        const vibeIndicator = document.getElementById('vibe-indicator');
+        const maturityBar = document.createElement('div');
+        maturityBar.id = 'maturity-container';
+        maturityBar.style = 'padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.7rem;';
+        document.querySelector('.pane').insertBefore(maturityBar, thinkingFlow);
+
+        const micBtn = document.getElementById('mic-btn');
+        let vocalMode = false; // Toggle for AI speaking back
+
+        // Web Speech API Integration (Continuous Mode)
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        let isVoiceActive = false;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                micBtn.classList.add('listening');
+                userInput.placeholder = "Listening...";
+            };
+
+            recognition.onend = () => {
+                if (isVoiceActive) {
+                    try { recognition.start(); } catch (e) { }
+                } else {
+                    micBtn.classList.remove('listening');
+                    userInput.placeholder = "Whisper your thoughts...";
+                }
+            };
+
+            recognition.onresult = (event) => {
+                const lastIdx = event.results.length - 1;
+                const transcript = event.results[lastIdx][0].transcript;
+
+                // Only act if there's text
+                if (transcript.trim()) {
+                    userInput.value = transcript;
+                    setTimeout(() => sendMessage('voice'), 500);
+                }
+            }; recognition.onerror = (event) => {
+                console.error("Speech Error:", event.error);
+                micBtn.classList.remove('listening');
+                userInput.placeholder = "Error hearing you.";
+            };
+
+            micBtn.addEventListener('click', () => {
+                if (isVoiceActive) {
+                    isVoiceActive = false;
+                    recognition.stop();
+                    micBtn.classList.remove('listening');
+                } else {
+                    isVoiceActive = true;
+                    recognition.start();
+                }
+            });
+        } else {
+            micBtn.style.display = 'none'; // Hide if not supported
+            console.log("Web Speech API not supported.");
+        }
+
+        // Plot Upload Logic
+        uploadBtn.addEventListener('click', () => plotUpload.click());
+        plotUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            addThought("Production", `File detected: ${file.name}. Initializing ingest...`);
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                userInput.value = `[FILE UPLOAD: ${file.name}]\n${event.target.result.substring(0, 500)}...`;
+                await startProductionRender();
+                sendMessage();
+            };
+            reader.readAsText(file);
+        });
+
+        async function startProductionRender() {
+            renderOverlay.style.display = 'flex';
+            const steps = [
+                { p: 10, t: "Ingesting Plot DNA..." },
+                { p: 30, t: "Calibrating Neural Lenses..." },
+                { p: 50, t: "Synthesizing Actor DNA..." },
+                { p: 75, t: "Compiling Cinematic Frames..." },
+                { p: 95, t: "Finalizing Temporal Consistency..." },
+                { p: 100, t: "Render Complete." }
+            ];
+
+            for (const step of steps) {
+                renderProgress.style.width = step.p + '%';
+                renderStatus.textContent = step.t;
+                await sleep(600 + Math.random() * 400);
+            }
+
+            await sleep(500);
+            renderOverlay.style.display = 'none';
+        }
+
+        async function sendMessage(triggerType = 'text') {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // Handle /vocal command
+            if (text.toLowerCase() === '/vocal') {
+                toggleVocalMode();
+                userInput.value = '';
+                return;
+            }
+
+            // Add user message
+            appendMessage(text, 'user-msg');
+            userInput.value = '';
+
+            // Update UI for thinking
+            vibeIndicator.textContent = 'DREAMING...';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+
+                const data = await response.json();
+
+                // Update Thinking Pane with Dream Fragment
+                if (data.dream) {
+                    addThought('Neural Drift', data.dream);
+                }
+
+                // Append Agent Response
+                const agentMsgDiv = appendMessage(data.response, 'agent-msg', data.vibe_state);
+
+                // Add vibe badge after typing completes
+                setTimeout(() => {
+                    if (data.vibe_state) {
+                        const badge = document.createElement('div');
+                        badge.className = 'vibe-badge';
+                        badge.textContent = data.vibe_state;
+                        agentMsgDiv.appendChild(badge);
+                    }
+                }, (data.response.length * 45) + 2000); // Estimate typing duration
+
+                // Update Global Vibe
+                vibeIndicator.textContent = data.vibe_state;
+                vibeIndicator.style.color = data.vibe_color;
+
+                // Update Code/Script
+                if (data.code_update) updateEditor(data.code_update);
+
+                // 🎬 Production Updates
+                if (data.shot_list) renderShotList(data.shot_list);
+                if (data.production_metadata) renderProductionMeta(data.production_metadata);
+                if (data.character_dna) renderCharacterDNA(data.character_dna);
+                if (data.diagnostics) renderDiagnostics(data.diagnostics);
+                if (data.production_metrics) renderMetrics(data.production_metrics);
+
+                // 🔊 Audio Playback (ONLY if voice-triggered)
+                if (triggerType === 'voice' && data.audio_url) {
+                    playAndVisualize(data.audio_url);
+                }
+
+                // 🧬 Update Growth Stats
+                if (data.stats) {
+                    updateGrowthUI(data.stats);
+                    if (data.stats.latest_insight) {
+                        addThought("Insight", data.stats.latest_insight);
+                    }
+                }
+
+                // 🔊 Vocal Synthesis (ONLY if voice-triggered)
+                if (triggerType === 'voice' && data.response) {
+                    speak(data.response);
+                }
+
+            } catch (err) {
+                console.error(err);
+                vibeIndicator.textContent = 'ERROR';
+            }
+        }
+
+        function appendMessage(text, className, vibe = null) {
+            const div = document.createElement('div');
+            div.className = `message ${className}`;
+
+            if (className === 'agent-msg') {
+                // Typewriter effect for agent
+                const textSpan = document.createElement('span');
+                const cursor = document.createElement('span');
+                cursor.className = 'typing-cursor';
+                cursor.textContent = '▋';
+
+                div.appendChild(textSpan);
+                div.appendChild(cursor);
+                chatFlow.appendChild(div);
+
+                // Start typing animation
+                typewriterAnimate(textSpan, cursor, text, vibe);
+            } else {
+                // Instant display for user
+                div.textContent = text;
+                chatFlow.appendChild(div);
+            }
+
+            chatFlow.scrollTop = chatFlow.scrollHeight;
+            return div;
+        }
+
+        async function typewriterAnimate(element, cursor, text, vibe) {
+            // Initial thinking pause
+            const thinkingDelay = Math.min(300 + text.length * 2, 1500);
+            await sleep(thinkingDelay);
+
+            // Typing speed based on vibe
+            const speeds = {
+                'CURIOSITY': 35,
+                'REFLECTION': 65,
+                'INTIMACY': 55,
+                'PLAYFUL': 25
+            };
+            const baseSpeed = speeds[vibe] || 45;
+
+            let displayed = '';
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                displayed += char;
+                element.textContent = displayed;
+
+                // Variable delays for natural rhythm
+                let delay = baseSpeed;
+                if (char === ',' || char === ';') {
+                    delay = baseSpeed * 2.5;
+                } else if (char === '.' || char === '!' || char === '?') {
+                    delay = baseSpeed * 4;
+                } else if (char === ' ') {
+                    delay = baseSpeed * 0.6;
+                } else if (text.substr(i, 3) === '...') {
+                    delay = baseSpeed * 8;
+                }
+
+                // Random micro-variations (human-like)
+                delay *= (0.85 + Math.random() * 0.3);
+
+                await sleep(delay);
+                chatFlow.scrollTop = chatFlow.scrollHeight;
+            }
+
+            // 🟢 Render Markdown after typing ends for perfect look
+            element.innerHTML = marked.parse(text);
+
+            // Remove cursor after typing
+            setTimeout(() => cursor.remove(), 500);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function addThought(label, content) {
+            const card = document.createElement('div');
+            card.className = 'thought-card';
+            card.innerHTML = `<div class="thought-label">${label}</div>${content}`;
+            thinkingFlow.prepend(card);
+            // Keep only latest 10 thoughts
+            if (thinkingFlow.children.length > 10) {
+                thinkingFlow.removeChild(thinkingFlow.lastChild);
+            }
+        }
+
+        function updateEditor(code) {
+            const editor = document.getElementById('code-editor');
+            editor.innerHTML = '';
+            const lines = code.split('\n');
+            lines.forEach((line, i) => {
+                const div = document.createElement('div');
+                div.className = 'editor-line';
+                div.innerHTML = `<span class="line-num">${i + 1}</span><span>${escapeHtml(line)}</span>`;
+                editor.appendChild(div);
+            });
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function renderShotList(shots) {
+            const container = document.getElementById('shot-feed');
+            container.innerHTML = '';
+            shots.forEach((sceneGroup, i) => {
+                const header = document.createElement('div');
+                header.style = "font-size: 0.6rem; color: var(--accent); margin-top: 10px; border-bottom: 1px solid var(--border)";
+                header.textContent = `SCENE: ${sceneGroup.scene}`;
+                container.appendChild(header);
+
+                sceneGroup.shots.forEach((shot, j) => {
+                    const div = document.createElement('div');
+                    div.className = 'shot-item';
+                    div.innerHTML = `
+                        <span class="shot-type">${shot.type.split('_')[0].toUpperCase()}</span>
+                        <div style="text-align: right">
+                            <div>${shot.rig} | ${shot.lens.focal_length}</div>
+                            <div style="font-size: 0.5rem; color: #555">Focus: ${shot.dof.focus_distance}</div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            });
+        }
+
+        function renderProductionMeta(meta) {
+            const visualPlaceholder = document.getElementById('visual-placeholder');
+            const video = document.getElementById('output-video');
+
+            // Simulation of video availability
+            if (meta.estimated_runtime) {
+                visualPlaceholder.style.display = 'none';
+                video.style.display = 'block';
+                // Point to a high-quality cinematic loop placeholder
+                video.src = "https://assets.mixkit.co/videos/preview/mixkit-stars-in-the-night-sky-moving-slowly-3745-large.mp4";
+                video.play();
+            }
+
+            const visual = document.getElementById('production-visual');
+            // Remove old meta if exists
+            const oldMeta = visual.querySelector('.meta-container');
+            if (oldMeta) oldMeta.remove();
+
+            const metaContainer = document.createElement('div');
+            metaContainer.className = 'meta-container';
+            metaContainer.style = "position: absolute; top: 10px; right: 10px; text-align: right; pointer-events: none;";
+            metaContainer.innerHTML = `
+                <div class="meta-accent">${meta.genre} / ${meta.style}</div>
+                <div class="meta-sub">${meta.consistency_check}</div>
+                <div class="meta-line">Est. Runtime: ${meta.estimated_runtime}</div>
+            `;
+            visual.appendChild(metaContainer);
+        }
+
+        function renderCharacterDNA(dnaList) {
+            dnaList.forEach(dna => {
+                const card = document.createElement('div');
+                card.className = 'dna-card';
+                card.innerHTML = `
+                    <div class="dna-label">DNA: ${dna.face_hash}</div>
+                    <div class="dna-strip">
+                        <div class="dna-bit active"></div>
+                        <div class="dna-bit active"></div>
+                        <div class="dna-bit"></div>
+                        <div class="dna-bit active"></div>
+                    </div>
+                    <div style="font-size: 0.5rem; color: var(--muted); margin-top: 4px;">Vox: ${dna.voice_id}</div>
+                    <div style="font-size: 0.5rem; color: var(--secondary-accent);">Range: ${dna.expression_range.join(', ')}</div>
+                    <div style="font-size: 0.5rem; color: var(--muted);">Sim: ${dna.secondary_motion}</div>
+                `;
+                addThought("Visual DNA", card.outerHTML);
+            });
+        }
+
+        function renderDiagnostics(diag) {
+            addThought("Capability Sync", `
+                <div class="diag-text">
+                    Res: ${diag.current.resolution} | FPS: ${diag.current.frame_rate}<br>
+                    Consistency: ${Math.round(diag.current.character_consistency_score * 100)}%
+                </div>
+            `);
+        }
+
+        function renderMetrics(metrics) {
+            const monitor = document.querySelector('.monitor-div');
+            // Remove old telemetry if exists
+            const oldTel = monitor.querySelector('.telemetry-overlay');
+            if (oldTel) oldTel.remove();
+
+            const telemetry = document.createElement('div');
+            telemetry.className = 'telemetry-overlay';
+            telemetry.innerHTML = `
+                FVD: ${metrics.fvd_score}<br>
+                Artifacts: ${metrics.artifact_rate}<br>
+                Temporal: ${metrics.temporal_coherence}
+            `;
+            monitor.appendChild(telemetry);
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let currentSource = null;
+
+        function playAndVisualize(url) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const audio = new Audio(url);
+            const source = audioCtx.createMediaElementSource(audio);
+            const analyser = audioCtx.createAnalyser();
+
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
+            analyser.fftSize = 256; // Increased for more detail
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const canvas = document.getElementById('visualizer');
+            const ctx = canvas.getContext('2d');
+
+            // Set internal resolution to match displayed size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            function draw() {
+                if (audio.paused) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    return;
+                }
+
+                requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let x = 0;
+
+                // Mirror effect
+                const color = vibeIndicator.style.color || '#6ee7b7';
+                ctx.fillStyle = color;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
+
+                    // Draw centered bars
+                    ctx.fillRect(x, (canvas.height - barHeight) / 2, barWidth, barHeight);
+
+                    x += barWidth + 2;
+                }
+            }
+
+            audio.play();
+            draw();
+        }
+
+        // 🔊 Vocal Synthesis Logic
+        function speak(text) {
+            if (!window.speechSynthesis) return;
+
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voices = window.speechSynthesis.getVoices();
+
+            // Find a smooth, deep voice
+            const preferred = ["Google US English", "Microsoft Zira", "Samantha", "Daniel"];
+            let voice = voices.find(v => preferred.some(p => v.name.includes(p)));
+            if (!voice) voice = voices[0];
+
+            utterance.voice = voice;
+            utterance.rate = 0.95;
+            utterance.pitch = 0.85; // Lower pitch for "Vibe" aesthetic
+            utterance.volume = 1.0;
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Initialize voices
+        window.speechSynthesis.onvoiceschanged = () => {
+            console.log("Speech Synthesis Voices Ready");
+        };
+
+        // Add a hidden vocal toggle listener (or user can just type /voice)
+        function toggleVocalMode() {
+            vocalMode = !vocalMode;
+            addThought("Vocal Module", vocalMode ? "Synthesizer Engaged" : "Synthesizer Offline");
+
+            // Speak confirmation
+            if (vocalMode) speak("Voice synthesis enabled.");
+            else window.speechSynthesis.cancel();
+        }
+
+        function updateGrowthUI(stats) {
+            const container = document.getElementById('maturity-container');
+            container.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span>NEURAL MATURITY</span>
+                    <span>${Math.round(stats.maturity * 100)}%</span>
+                </div>
+                <div style="width:100%; height:4px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden;">
+                    <div style="width:${stats.maturity * 100}%; height:100%; background:var(--accent); transition: width 1s ease;"></div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-top:8px; opacity:0.7; font-size:0.6rem;">
+                    <div>ANALYTICAL: ${stats.traits.analytical}</div>
+                    <div>EMPATHETIC: ${stats.traits.empathetic}</div>
+                    <div>CREATIVE: ${stats.traits.creative}</div>
+                    <div>PROACTIVE: ${stats.traits.proactive}</div>
+                </div>
+            `;
+        }
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage('text');
+        });
+    </script>
+</body>
+
+</html>
