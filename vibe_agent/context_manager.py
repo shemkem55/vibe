@@ -199,3 +199,29 @@ class ContextManager:
                 unanswered.append(question)
         
         return unanswered[-2:] if unanswered else []
+
+class QuestionClassifier:
+    """Classify input questions to determine research needs"""
+    
+    def __init__(self):
+        self.patterns = {
+            "factual": [r"what is", r"who is", r"where is", r"when did", r"how many"],
+            "procedural": [r"how do I", r"how to", r"steps for"],
+            "definitional": [r"define", r"meaning of", r"what does .* mean"]
+        }
+
+    def classify_question(self, text: str) -> dict:
+        text_lower = text.lower()
+        is_question = "?" in text or any(re.search(p, text_lower) for p in [p for sub in self.patterns.values() for p in sub])
+        
+        q_type = "general"
+        for category, patterns in self.patterns.items():
+            if any(re.search(p, text_lower) for p in patterns):
+                q_type = category
+                break
+                
+        return {
+            "is_question": is_question,
+            "type": q_type,
+            "needs_direct_answer": is_question
+        }

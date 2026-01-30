@@ -136,6 +136,14 @@ class VibeAgent:
         except Exception as e:
             print(f"Warning: Evolved assembly failed: {e}")
             
+        # 🎬 Execute Autonomous Actions (Expansion)
+        self.intelligence.execute_autonomous_actions(intel)
+        
+        # Log performance
+        proc_time = intel.get("production", {}).get("processing_time_ms", 0)
+        if proc_time > 500:
+             print(f"   ⏱️ Heavy cognitive load: {proc_time}ms")
+            
         return final_response, intel
 
     def chat_loop(self):

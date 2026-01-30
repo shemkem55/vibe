@@ -15,8 +15,9 @@ from tts_engine import TTSManager
 from ambient_manager import AmbientSoundManager
 from research_engine import ResearchTrigger, ResearchEngine
 from research_response import ResearchResponseBuilder
-from direct_answer import QuestionDetector
-from context_manager import ContextManager
+from direct_answer_generator import EmergencyResponseFix
+from emergency_detail_upgrade import QuickDetailEnhancer
+from context_manager import ContextManager, QuestionClassifier
 from understanding_engine import UnderstandingEngine
 
 # Cinema Engine Transformation
@@ -68,7 +69,7 @@ class VibeServer:
         self.research_trigger = ResearchTrigger()
         self.research_engine = ResearchEngine()
         self.research_builder = ResearchResponseBuilder()
-        self.question_detector = QuestionDetector()
+        self.question_classifier = QuestionClassifier()
         self.emergency_fix = EmergencyResponseFix()
         self.detail_enhancer = QuickDetailEnhancer()
         self.evolved_builder = EvolvedResponseArchitect()
@@ -77,6 +78,13 @@ class VibeServer:
         self.understanding_engine = UnderstandingEngine()
         
         # 🧠 Phase 1-4 Intelligence Upgrade: Full cognitive orchestration
+        try:
+            from ai_core_orchestrator import AICoreOrchestrator
+            self.ai_orchestrator = AICoreOrchestrator()
+            print("   🚀 AI Core Orchestrator v3.0 loaded successfully!")
+        except ImportError as e:
+            print(f"   ⚠️ AI Orchestrator not available: {e}")
+            self.ai_orchestrator = None
         self.intelligence = IntelligenceOrchestrator()
         
         self.name = self.processor.essence.get("name", "Vibe")
@@ -302,6 +310,9 @@ class VibeServer:
         # 🧠 INTELLIGENCE UPGRADE: Update learning and context
         self.intelligence.process_response(user_input, final_response, active_vibe)
         
+        # 🎬 Execute Autonomous Actions (Expansion)
+        self.intelligence.execute_autonomous_actions(intel)
+        
         # Prepare intelligence insights for frontend
         intel_insights = {
             "thought": thought_whisper,
@@ -309,7 +320,9 @@ class VibeServer:
             "role": intel_role,
             "confidence": round(intel_confidence, 2),
             "is_follow_up": is_follow_up,
-            "user_facts": len(intel['memory']['user_facts_detected'])
+            "user_facts": len(intel['memory']['user_facts_detected']),
+            "processing_time": intel.get("production", {}).get("processing_time_ms", 0),
+            "safety": intel.get("production", {}).get("safety", {}).get("risk", "low")
         }
         
         return {
@@ -332,6 +345,34 @@ agent = VibeServer()
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
+    # Try using the new AI Core Orchestrator first
+    if hasattr(agent, 'ai_orchestrator') and agent.ai_orchestrator:
+        try:
+            result = await agent.ai_orchestrator.process_query(req.message)
+            
+            # Convert orchestrator result to expected format
+            return {
+                "response": result["response"],
+                "dream": result.get("thinking_process", ""),
+                "vibe": "DIRECTION",  # Default vibe
+                "color": "#60a5fa",
+                "audio_url": None,
+                "production": {
+                    "version": result["version"],
+                    "models_used": result["models_used"],
+                    "confidence": result["metadata"]["confidence"],
+                    "processing_time": result["metadata"]["processing_time"]
+                },
+                "intelligence": {
+                    "analysis": result["query_analysis"],
+                    "processing_path": result["processing_path"],
+                    "performance": result["performance"]
+                }
+            }
+        except Exception as e:
+            print(f"⚠️ Orchestrator error, falling back to legacy: {e}")
+    
+    # Fallback to legacy system
     return agent.get_response(req.message)
 
 @app.get("/", response_class=HTMLResponse)
@@ -397,6 +438,11 @@ async def personality_state():
 async def get_reflection():
     """Get the agent's self-reflection on recent performance"""
     return agent.intelligence.get_periodic_reflection()
+
+@app.get("/health")
+async def system_health():
+    """Get diagnostic health of all AI components"""
+    return agent.intelligence.get_system_health()
 
 @app.get("/intelligence/creative/{concept_a}/{concept_b}")
 async def creative_insight(concept_a: str, concept_b: str):

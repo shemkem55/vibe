@@ -220,6 +220,7 @@ class IntelligenceOrchestrator:
                 "- Use bold headers for screenplay elements or analysis.\n"
                 "- Bullet points for character traits or plot beats.\n"
                 f"- Align with the current vibe: {vibe}.\n"
+                f"{'- Note: The user is speaking in ' + understanding.get('language') + '. Respond in that language.' if understanding.get('language') != 'en' else ''}\n"
                 "Do not include the Creative Engine or Script Sanctuary markers; those will be added by the production architect."
             )
             
@@ -593,27 +594,54 @@ class IntelligenceOrchestrator:
     
     def end_session(self):
         """End the current session and create summary"""
-        # Get recent context
-        context_data = self.context_manager.get_context_for_prompt()
-        exchanges = context_data.get("recent_exchanges", []) if context_data else []
+        num_interactions = self.current_session["exchange_count"]
+        topics = list(self.current_session["conversation_topics"])
         
-        # Create conversation summary
-        if exchanges:
-            summary = self.semantic_memory.summarize_conversation(exchanges)
-            print(f"📝 Session summarized: {summary}")
-        
-        # Store episodic memory of the session
         session_summary = (
-            f"Session with {self.current_session['exchange_count']} exchanges. "
-            f"Topics: {', '.join(list(self.current_session['conversation_topics'])[:5])}"
+            f"Session with {num_interactions} exchanges. "
+            f"Topics: {', '.join(topics[:5])}"
         )
+        
         self.memory.store_episodic(
             session_summary,
-            list(self.current_session["conversation_topics"])[:5],
-            emotion=self.current_session["current_vibe"]
+            topics[:5],
+            emotion=self.current_session.get("current_vibe", "NEUTRAL")
         )
         
-        return self.get_intelligence_stats()
+        return session_summary
+
+    def get_system_health(self) -> Dict[str, Any]:
+        """Diagnostic check for all intelligence components"""
+        return {
+            "status": "HEALTHY",
+            "version": "4.0.1",
+            "modules": {
+                "core": {
+                    "memory": self.memory is not None,
+                    "context": self.context_manager is not None,
+                    "reasoning": self.reasoning_engine is not None,
+                    "knowledge": self.knowledge_graph is not None
+                },
+                "advanced": {
+                    "emotional": self.emotional_intelligence is not None,
+                    "meta": self.metacognition is not None,
+                    "creative": self.creative_intel is not None,
+                    "autonomy": self.task_orchestrator is not None
+                }
+            },
+            "recent_performance": self.learning_module.get_learning_stats(),
+            "active_persona": self.personality.active_persona
+        }
+
+    def execute_autonomous_actions(self, intel_packet: Dict) -> Dict:
+        """Trigger side-effects based on autonomous decisions"""
+        action = intel_packet.get("steering", {}).get("autonomous_action")
+        if not action:
+            return {"executed": False}
+            
+        print(f"🎬 Executing Autonomous Action: {action['type']}")
+        # Simulation of real side-effects
+        return {"executed": True, "type": action["type"]}
 
     def _safety_check(self, text: str) -> Dict[str, str]:
         """Internal safety guard to prevent harmful interactions"""
